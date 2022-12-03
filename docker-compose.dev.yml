@@ -1,0 +1,60 @@
+version: '3.8'
+services:
+    postgres:
+        image: postgres:14.5
+        restart: always
+        user: postgres
+        environment:
+            - POSTGRES_PASSWORD=postgres_password
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready']
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        networks:
+            - database
+        stdin_open: true
+        tty: true
+
+    backend-user:
+        build:
+            dockerfile: dockerfiles/Dockerfile.dev
+            context: .
+            args:
+                - NPM_TOKEN=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
+        environment:
+            - ENVIRONMENT=prod
+            - DB_USERNAME=postgres
+            - DB_PASSWORD=postgres_password
+            - DB_DATABASE=postgres
+            - DB_HOST=postgres
+            - DB_PORT=5432
+            - DB_DIALECT=postgres
+            - REFRESH_TOKEN_PAYLOAD_SECRET=my-super-secret3
+            - PORT=49202
+        volumes:
+            - /app/node_modules
+            - .:/app
+        ports:
+            - '49202:49202'
+        networks:
+            - microservice
+            - database
+        depends_on:
+            postgres:
+                condition: service_healthy
+        healthcheck:
+            test: wget --no-verbose --tries=1 --spider http://backend-user:49202 || exit 1
+            start_period: 15s
+            interval: 5s
+            timeout: 10s
+            retries: 10
+networks:
+    frontend:
+        driver: bridge
+    microservice:
+        driver: bridge
+    database:
+        driver: bridge
+    application-gateway:
+        driver: bridge
