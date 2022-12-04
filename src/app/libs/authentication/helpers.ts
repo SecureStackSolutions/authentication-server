@@ -4,7 +4,7 @@ import CryptoJS from 'crypto-js';
 import { IncomingHttpHeaders } from 'http';
 
 const { accessTokenSecret, refreshTokenSecret, refreshTokenPayloadSecret } =
-    config;
+    config.secrets;
 
 export const generateAccessToken = (params: any) =>
     jwt.sign({ ...params }, accessTokenSecret, { expiresIn: '60s' });

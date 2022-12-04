@@ -4,7 +4,7 @@ import {
     generateRefreshToken,
     getTokensFromHeaders,
 } from '../helpers';
-import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { config } from '../../../../config';
 
 export async function verifyUserTokens(data: saveNewUserType): Promise<{
@@ -13,7 +13,7 @@ export async function verifyUserTokens(data: saveNewUserType): Promise<{
 }> {
     const { refreshToken, accessToken } = getTokensFromHeaders(data.headers);
     const { accessTokenSecret, refreshTokenSecret, refreshTokenPayloadSecret } =
-        config;
+        config.secrets;
 
     let renewTokens = false;
     let accessTokenPayload: any;
