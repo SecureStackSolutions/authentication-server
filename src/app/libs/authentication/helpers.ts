@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { config } from 'src/config';
+import { config } from '../../../config';
 import CryptoJS from 'crypto-js';
 import { IncomingHttpHeaders } from 'http';
 
@@ -21,17 +21,20 @@ export const generateRefreshToken = (params: RefreshTokenPayload) =>
         { expiresIn: '90d' }
     );
 
-const getRefreshTokenFromCookies = (cookies: string | undefined) => {
-    if (cookies) {
-        const cookiesArray = cookies.split(';');
-        for (const cookie of cookiesArray) {
-            const [key, value] = cookie.trim().split('=');
-            if (key === 'THIS_IS_NOT_THE_REFRESH_TOKEN_YOU_ARE_LOOKING_FOR') {
-                return value;
-            }
+const getRefreshTokenFromCookies = (cookies: string | undefined): string => {
+    if (!cookies) {
+        throw Error('NO COOKIES');
+    }
+
+    const cookiesArray = cookies.split(';');
+    for (const cookie of cookiesArray) {
+        const [key, value] = cookie.trim().split('=');
+        if (key === 'THIS_IS_NOT_THE_REFRESH_TOKEN_YOU_ARE_LOOKING_FOR') {
+            return value;
         }
     }
-    return null;
+
+    throw Error('COOKIES DO NOT CONTAIN REFRESH TOKEN');
 };
 
 export const getTokensFromHeaders = (headers: IncomingHttpHeaders) => ({

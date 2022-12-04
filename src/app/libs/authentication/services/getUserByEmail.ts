@@ -8,7 +8,7 @@ export async function getUserTokens(data: {
     });
 
     if (!user) {
-        throw Error('User not found');
+        throw Error('USER NOT FOUND');
     }
     return user;
 }

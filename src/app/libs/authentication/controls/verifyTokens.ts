@@ -5,11 +5,9 @@ import {
     getTokensFromHeaders,
 } from '../helpers';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
-import { config } from 'src/config';
+import { config } from '../../../../config';
 
-export async function verifyUserTokens(
-    data: saveNewUserType
-): Promise<{
+export async function verifyUserTokens(data: saveNewUserType): Promise<{
     accessToken: string | undefined;
     refreshToken: string | undefined;
 }> {
@@ -17,23 +15,18 @@ export async function verifyUserTokens(
     const { accessTokenSecret, refreshTokenSecret, refreshTokenPayloadSecret } =
         config;
 
-    let accessTokenIsExpired = false;
+    let renewTokens = false;
     let accessTokenPayload: any;
 
     try {
         accessTokenPayload = jwt.verify(accessToken, accessTokenSecret);
     } catch (err) {
-        if (err instanceof TokenExpiredError) {
-            accessTokenIsExpired = true;
-        } else {
-            throw Error('UNAUTHORIZED');
-        }
+        renewTokens = true;
     }
 
-    const { encodedPayload } = jwt.verify(
-        refreshToken!,
-        refreshTokenSecret
-    ) as { encodedPayload: string };
+    const { encodedPayload } = jwt.verify(refreshToken, refreshTokenSecret) as {
+        encodedPayload: string;
+    };
 
     const decryptedPayload = JSON.parse(
         CryptoJS.AES.decrypt(
@@ -44,16 +37,17 @@ export async function verifyUserTokens(
 
     for (const [key, value] of Object.entries(decryptedPayload)) {
         if (accessTokenPayload[key] !== value) {
-            throw Error('UNAUTHORIZED');
+            throw Error('UNAUTHORIZED: TOKENS DO NOT MATCH');
         }
     }
 
     let newRefreshToken;
     let newAccessToken;
-    if (accessTokenIsExpired) {
+    if (renewTokens) {
         newRefreshToken = generateRefreshToken(decryptedPayload);
         newAccessToken = generateAccessToken(decryptedPayload);
     }
+
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 }
 

@@ -44,7 +44,7 @@ export class AuthenticationController {
 
             return res.status(400).send({
                 type: 'ERROR',
-                message: 'Something went wrong',
+                message: 'AN UNKNOWN ERROR OCCURED',
             });
         }
     }
@@ -100,7 +100,7 @@ export class AuthenticationController {
 
             return res.status(400).send({
                 type: 'ERROR',
-                message: 'Something went wrong',
+                message: 'AN UNKNOWN ERROR OCCURED',
             });
         }
     }
