@@ -4,8 +4,10 @@ import {
     generateRefreshToken,
     getTokensFromHeaders,
 } from '../helpers';
-import jwt from 'jsonwebtoken';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { config } from '../../../../config';
+import CryptoJS from 'crypto-js';
+import { access } from 'fs';
 
 export async function verifyUserTokens(data: saveNewUserType): Promise<{
     accessToken: string | undefined;
@@ -18,34 +20,46 @@ export async function verifyUserTokens(data: saveNewUserType): Promise<{
     let renewTokens = false;
     let accessTokenPayload: any;
 
-    try {
-        accessTokenPayload = jwt.verify(accessToken, accessTokenSecret);
-    } catch (err) {
-        renewTokens = true;
-    }
+    // accessTokenPayload = jwt.verify(
+    //     accessToken,
+    //     accessTokenSecret,
+    //     (err, decoded) => {
+    //         console.log(decoded);
+    //     }
+    // );
+
+    // try {
+    // } catch (err) {
+    //     if (err instanceof TokenExpiredError) {
+    //         renewTokens = true;
+    //     } else {
+    //         throw Error('UNAUTHORIZED: NOT A VALID ACCESS TOKEN');
+    //     }
+    // }
 
     const { encodedPayload } = jwt.verify(refreshToken, refreshTokenSecret) as {
         encodedPayload: string;
     };
 
-    const decryptedPayload = JSON.parse(
+    const { email, name, userId } = JSON.parse(
         CryptoJS.AES.decrypt(
             encodedPayload,
             refreshTokenPayloadSecret
         ).toString(CryptoJS.enc.Utf8)
     );
 
-    for (const [key, value] of Object.entries(decryptedPayload)) {
-        if (accessTokenPayload[key] !== value) {
-            throw Error('UNAUTHORIZED: TOKENS DO NOT MATCH');
-        }
-    }
+    // if (
+    //     accessTokenPayload.email !== email ||
+    //     accessTokenPayload.name !== name
+    // ) {
+    //     throw Error('UNAUTHORIZED: TOKENS DO NOT MATCH');
+    // }
 
     let newRefreshToken;
     let newAccessToken;
     if (renewTokens) {
-        newRefreshToken = generateRefreshToken(decryptedPayload);
-        newAccessToken = generateAccessToken(decryptedPayload);
+        newRefreshToken = generateRefreshToken({ email, name, userId });
+        newAccessToken = generateAccessToken({ email, name });
     }
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };

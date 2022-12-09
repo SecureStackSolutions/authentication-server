@@ -21,26 +21,35 @@ export const generateRefreshToken = (params: RefreshTokenPayload) =>
         { expiresIn: '90d' }
     );
 
-const getRefreshTokenFromCookies = (cookies: string | undefined): string => {
+function getRefreshTokenFromCookies(cookies: string | undefined): string {
     if (!cookies) {
         throw Error('NO COOKIES');
     }
-
     const cookiesArray = cookies.split(';');
     for (const cookie of cookiesArray) {
         const [key, value] = cookie.trim().split('=');
-        if (key === 'THIS_IS_NOT_THE_REFRESH_TOKEN_YOU_ARE_LOOKING_FOR') {
+        if (key === 'refresh-token') {
             return value;
         }
     }
 
-    throw Error('COOKIES DO NOT CONTAIN REFRESH TOKEN');
-};
+    throw Error('REFRESH TOKEN NOT FOUND');
+}
+
+function getAccessTokenFromHeader({
+    'access-token': accessToken,
+}: {
+    'access-token': string;
+}): string {
+    // if (!accessToken) {
+    //     throw Error('ACCESS TOKEN NOT FOUND');
+    // }
+    return accessToken;
+}
 
 export const getTokensFromHeaders = (headers: IncomingHttpHeaders) => ({
     refreshToken: getRefreshTokenFromCookies(headers.cookie),
-    accessToken:
-        headers.THIS_IS_NOT_THE_ACCESS_TOKEN_YOU_ARE_LOOKING_FOR as string,
+    accessToken: getAccessTokenFromHeader(headers as any),
 });
 
 export interface RefreshTokenPayload {
