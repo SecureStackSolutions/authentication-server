@@ -11,9 +11,7 @@ const _config: Config = {
             dialect: 'postgres',
         },
         secrets: {
-            accessTokenSecret: 'my-super-secret',
-            refreshTokenSecret: 'my-super-secret2',
-            refreshTokenPayloadSecret: 'my-super-secret3',
+            authenticationTokenSecret: 'my-super-secret2',
         },
     },
     prod: {
@@ -26,10 +24,8 @@ const _config: Config = {
             dialect: process.env.DB_DIALECT! as Dialect,
         },
         secrets: {
-            accessTokenSecret: process.env.ACCESS_TOKEN_SECRET as string,
-            refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET as string,
-            refreshTokenPayloadSecret: process.env
-                .REFRESH_TOKEN_PAYLOAD_SECRET as string,
+            authenticationTokenSecret: process.env
+                .ACCESS_TOKEN_SECRET as string,
         },
     },
 };
@@ -40,9 +36,7 @@ interface Config {
     [key: string]: {
         database: any;
         secrets: {
-            accessTokenSecret: string;
-            refreshTokenSecret: string;
-            refreshTokenPayloadSecret: string;
+            authenticationTokenSecret: string;
         };
     };
 }

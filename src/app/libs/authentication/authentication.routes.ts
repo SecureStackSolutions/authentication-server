@@ -3,7 +3,7 @@ import { AuthenticationController } from './authentication.controller';
 
 const router = Router();
 
-router.get('/verifyUser', AuthenticationController.verifyUser);
-router.post('/createTokens', AuthenticationController.createTokens);
+router.get('/authenticate', AuthenticationController.authenticate);
+router.post('/createToken', AuthenticationController.createTokens);
 
 export { router };

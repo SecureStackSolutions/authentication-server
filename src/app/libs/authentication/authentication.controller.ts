@@ -1,45 +1,41 @@
 import { Request, Response } from 'express';
 import { verifyUserTokens } from './controls/verifyTokens';
-import { generateAccessToken, generateRefreshToken } from './helpers';
+import { generateAuthenticationToken } from './helpers';
 
 interface CustomRequest<T> extends Request {
     body: T;
 }
 
 export class AuthenticationController {
-    static async verifyUser(req: Request, res: Response) {
+    static async authenticate(req: Request, res: Response) {
         try {
-            const { accessToken, refreshToken } = await verifyUserTokens({
+            console.log(req.headers);
+            const authenticationTokenPayload = await verifyUserTokens({
                 headers: req.headers,
             });
 
-            if (accessToken && refreshToken) {
-                res.cookie('refresh-token', refreshToken, {
-                    httpOnly: true,
-                    sameSite: 'none',
-                    secure: true,
-                    maxAge: 24 * 60 * 60 * 1000 * 60,
-                });
-                res.setHeader('access-token', accessToken);
-            }
-
-            return res.status(200).send({
-                type: 'SUCCESS',
-                results: [],
-            });
+            return res.status(200).send(
+                createResponse({
+                    type: 'Sucess',
+                    extras: { authenticationTokenPayload },
+                })
+            );
         } catch (err: any) {
-            console.log(err);
             if (err instanceof Error) {
-                return res.status(400).send({
-                    type: 'ERROR',
-                    message: err.message,
-                });
+                return res.status(400).send(
+                    createResponse({
+                        type: 'Error',
+                        message: err.message,
+                    })
+                );
             }
 
-            return res.status(400).send({
-                type: 'ERROR',
-                message: 'AN UNKNOWN ERROR OCCURED',
-            });
+            return res.status(400).send(
+                createResponse({
+                    type: 'Error',
+                    message: 'An unknown error occured',
+                })
+            );
         }
     }
 
@@ -50,34 +46,52 @@ export class AuthenticationController {
         try {
             const { name, email, id } = req.body;
 
-            return res.status(200).send({
-                type: 'SUCCESS',
-                results: [
-                    {
-                        refreshToken: generateRefreshToken({
-                            email,
-                            name,
-                            userId: id.toString(),
-                        }),
-                        accessToken: generateAccessToken({
-                            email,
-                            name,
-                        }),
-                    },
-                ],
-            });
+            res.setHeader(
+                'authentication-token',
+                generateAuthenticationToken({
+                    email,
+                    name,
+                    userId: id.toString(),
+                })
+            );
+
+            return res.status(200).send(createResponse({ type: 'Success' }));
         } catch (err) {
             if (err instanceof Error) {
-                return res.status(400).send({
-                    type: 'ERROR',
-                    message: err.message,
-                });
+                return res.status(400).send(
+                    createResponse({
+                        type: 'Error',
+                        message: err.message,
+                    })
+                );
             }
 
-            return res.status(400).send({
-                type: 'ERROR',
-                message: 'AN UNKNOWN ERROR OCCURED',
-            });
+            return res.status(400).send(
+                createResponse({
+                    type: 'Error',
+                    message: 'An unknown error occured',
+                })
+            );
         }
     }
+}
+
+interface createResponseInput {
+    type: string;
+    message?: string;
+    results?: ResultsResponseType[];
+    extras?: ResultsResponseType;
+}
+
+function createResponse({
+    type,
+    message = '',
+    results = [],
+    extras = {},
+}: createResponseInput) {
+    return { type, message, results, extras };
+}
+
+interface ResultsResponseType {
+    [key: string]: any;
 }

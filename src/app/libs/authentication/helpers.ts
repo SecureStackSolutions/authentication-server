@@ -3,23 +3,12 @@ import { config } from '../../../config';
 import CryptoJS from 'crypto-js';
 import { IncomingHttpHeaders } from 'http';
 
-const { accessTokenSecret, refreshTokenSecret, refreshTokenPayloadSecret } =
-    config.secrets;
+const { authenticationTokenSecret } = config.secrets;
 
-export const generateAccessToken = (params: any) =>
-    jwt.sign({ ...params }, accessTokenSecret, { expiresIn: '60s' });
-
-export const generateRefreshToken = (params: RefreshTokenPayload) =>
-    jwt.sign(
-        {
-            encodedPayload: CryptoJS.AES.encrypt(
-                JSON.stringify(params),
-                refreshTokenPayloadSecret
-            ).toString(),
-        },
-        refreshTokenSecret,
-        { expiresIn: '90d' }
-    );
+export const generateAuthenticationToken = (params: RefreshTokenPayload) =>
+    jwt.sign({ payload: params }, authenticationTokenSecret, {
+        expiresIn: '90d',
+    });
 
 function getRefreshTokenFromCookies(cookies: string | undefined): string {
     if (!cookies) {
@@ -36,20 +25,16 @@ function getRefreshTokenFromCookies(cookies: string | undefined): string {
     throw Error('REFRESH TOKEN NOT FOUND');
 }
 
-function getAccessTokenFromHeader({
-    'access-token': accessToken,
-}: {
-    'access-token': string;
-}): string {
-    // if (!accessToken) {
-    //     throw Error('ACCESS TOKEN NOT FOUND');
-    // }
-    return accessToken;
+function getAuthenticationToken(headers: IncomingHttpHeaders): string {
+    const authenticationToken = headers['authentication-token'];
+    if (!authenticationToken) {
+        throw Error('Authentication token not found');
+    }
+    return authenticationToken as string;
 }
 
 export const getTokensFromHeaders = (headers: IncomingHttpHeaders) => ({
-    refreshToken: getRefreshTokenFromCookies(headers.cookie),
-    accessToken: getAccessTokenFromHeader(headers as any),
+    authenticationToken: getAuthenticationToken(headers),
 });
 
 export interface RefreshTokenPayload {
