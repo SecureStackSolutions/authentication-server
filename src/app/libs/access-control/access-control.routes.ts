@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { AuthenticationController } from './authentication.controller';
+import { AuthenticationController } from './access-control.controller';
 
 const router = Router();
 
 router.get('/authenticate', AuthenticationController.authenticate);
-router.post('/createToken', AuthenticationController.createTokens);
 
 export { router };

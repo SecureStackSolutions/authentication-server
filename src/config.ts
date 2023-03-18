@@ -2,6 +2,12 @@ import { Dialect } from 'sequelize';
 
 const _config: Config = {
     dev: {
+        admin: {
+            databaseUrl: process.env.ADMIN_DB_URL!,
+            serviceAccountCert: JSON.parse(
+                process.env.ADMIN_SERVICE_ACCOUNT_CERT!
+            ),
+        },
         database: {
             username: 'postgres',
             password: 'postgres_password',
@@ -11,10 +17,18 @@ const _config: Config = {
             dialect: 'postgres',
         },
         secrets: {
-            authenticationTokenSecret: 'my-super-secret2',
+            accessTokenSecret: 'my-access-secret',
+            refreshTokenSecret: 'my-refresh-secret',
+            refreshTokenPayloadSecret: 'my-refresh-secret',
+            tokenFamilySecret: 'my-tokenfamily-secret',
+            userIdSecret: 'my-userid-secret',
         },
     },
     prod: {
+        admin: {
+            database: process.env.ADMIN_DB_URL!,
+            serviceAccountCert: process.env.ADMIN_SERVICE_ACCOUNT_CERT!,
+        },
         database: {
             username: process.env.DB_USERNAME!,
             password: process.env.DB_PASSWORD!,
@@ -24,8 +38,11 @@ const _config: Config = {
             dialect: process.env.DB_DIALECT! as Dialect,
         },
         secrets: {
-            authenticationTokenSecret: process.env
-                .ACCESS_TOKEN_SECRET as string,
+            accessTokenSecret: process.env.ACCESS_TOKEN_SECRET as string,
+            refreshTokenSecret: 'my-refresh-secret',
+            refreshTokenPayloadSecret: 'my-refresh-secret',
+            tokenFamilySecret: 'my-tokenfamily-secret',
+            userIdSecret: 'my-userid-secret',
         },
     },
 };
@@ -34,9 +51,14 @@ export const config = _config[process.env.ENVIRONMENT!];
 
 interface Config {
     [key: string]: {
+        admin: any;
         database: any;
         secrets: {
-            authenticationTokenSecret: string;
+            accessTokenSecret: string;
+            refreshTokenSecret: string;
+            tokenFamilySecret: string;
+            userIdSecret: string;
+            refreshTokenPayloadSecret: string;
         };
     };
 }

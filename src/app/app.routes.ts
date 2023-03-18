@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { router } from './libs/authentication/authentication.routes';
+import { router } from './libs/access-control/access-control.routes';
 
 const rootRouter = Router();
 

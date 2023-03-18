@@ -2,9 +2,15 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import helmet from 'helmet';
+import { initializeApp } from 'firebase-admin/app';
+import { credential } from 'firebase-admin';
 
 import rootRouter from './app/app.routes';
-import { sequelize } from './app/libs/database';
+import { config } from './config';
+
+initializeApp({
+    credential: credential.cert(config.admin.serviceAccountCert),
+});
 
 const app = express();
 
@@ -19,10 +25,8 @@ app.disable('x-powered-by');
 
 const start = async (): Promise<void> => {
     try {
-        await sequelize.sync({ force: true });
         app.listen(process.env.PORT);
     } catch (error) {
-        console.error(error);
         process.exit(1);
     }
 };

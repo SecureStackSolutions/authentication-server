@@ -1,60 +1,62 @@
-version: '3.8'
+version: '3.9'
 services:
-    postgres:
-        image: postgres:14.5
+    application-gateway:
+        container_name: gateway
+        build:
+            context: ../api-gateway
         restart: always
-        user: postgres
         environment:
-            - POSTGRES_PASSWORD=postgres_password
-        healthcheck:
-            test: ['CMD-SHELL', 'pg_isready']
-            interval: 5s
-            timeout: 5s
-            retries: 5
+            KONG_DATABASE: "off"
+            KONG_AUTH_KEY: kong-key-auth
+            KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+            KONG_PROXY_ACCESS_LOG: /dev/stdout
+            KONG_ADMIN_ACCESS_LOG: /dev/stdout
+            KONG_PROXY_ERROR_LOG: /dev/stderr
+            KONG_ADMIN_ERROR_LOG: /dev/stderr
+            KONG_LOG_LEVEL: debug
+            KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
+            KONG_PLUGINSERVER_NAMES: js
+            KONG_PLUGINSERVER_JS_SOCKET: /usr/local/kong/js_pluginserver.sock
+            KONG_PLUGINSERVER_JS_START_CMD: /usr/local/lib/node_modules/kong-pdk/bin/kong-js-pluginserver -v -d /usr/local/kong/js-plugins
+            KONG_PLUGINSERVER_JS_QUERY_CMD: /usr/local/lib/node_modules/kong-pdk/bin/kong-js-pluginserver -d /usr/local/kong/js-plugins --dump-all-plugins
+            KONG_PLUGINS: bundled, user-authentication, strip-path
+        ports:
+            - 8000:8000
+            - 8443:8443
+            - 8001:8001
+            - 8444:8444
         networks:
-            - database
+            - application-gateway
+            - access-control-network
+        depends_on:
+            access-control-server:
+                condition: service_healthy
         stdin_open: true
         tty: true
 
-    backend-user:
+    access-control-server:
+        container_name: access-control-server
         build:
             dockerfile: dockerfiles/Dockerfile.dev
-            context: .
-            args:
-                - NPM_TOKEN=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
-        environment:
-            - ENVIRONMENT=prod
-            - DB_USERNAME=postgres
-            - DB_PASSWORD=postgres_password
-            - DB_DATABASE=postgres
-            - DB_HOST=postgres
-            - DB_PORT=5432
-            - DB_DIALECT=postgres
-            - REFRESH_TOKEN_PAYLOAD_SECRET=my-super-secret3
-            - PORT=49202
+            context: access-control-server
+        env_file:
+            - ../.env/auth-dev.env
         volumes:
             - /app/node_modules
-            - .:/app
+            - ./access-control-server:/app
         ports:
-            - '49202:49202'
+            - 49200
         networks:
-            - microservice
-            - database
-        depends_on:
-            postgres:
-                condition: service_healthy
+            - access-control-network
         healthcheck:
-            test: wget --no-verbose --tries=1 --spider http://backend-user:49202 || exit 1
+            test: wget --no-verbose --tries=1 --spider http://access-control-server:49200 || exit 1
             start_period: 15s
             interval: 5s
             timeout: 10s
             retries: 10
+
 networks:
-    frontend:
-        driver: bridge
-    microservice:
-        driver: bridge
-    database:
-        driver: bridge
     application-gateway:
+        driver: bridge
+    access-control-network:
         driver: bridge
